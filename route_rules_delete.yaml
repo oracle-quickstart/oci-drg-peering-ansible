@@ -1,0 +1,75 @@
+- hosts: localhost
+  collections: oracle.oci
+
+  tasks:
+    - name: first List route_tables
+      oci_network_route_table_facts:
+        compartment_id: "{{ compartment_first }}"
+        vcn_id: "{{ first_vcn_id }}"
+      register: route_tables_first
+    - set_fact:
+        rts_first: "{{ route_tables_first.route_tables }}"
+
+    - name: first Get a specific vcn
+      oci_network_vcn_facts:
+        vcn_id: "{{ first_vcn_id }}"
+      register: firstvcn
+    - set_fact:
+        cidr_first: "{{ firstvcn.vcns[0].cidr_block }}"
+
+    - name: second List route_tables
+      oci_network_route_table_facts:
+        compartment_id: "{{ compartment_second }}"
+        vcn_id: "{{ second_vcn_id }}"
+        region: "{{ second_region }}"
+      register: route_tables_first
+    - set_fact:
+        rts_second: "{{ route_tables_first.route_tables }}"
+
+    - name: second Get a specific vcn
+      oci_network_vcn_facts:
+        vcn_id: "{{ second_vcn_id }}"
+        region: "{{ second_region }}"
+      register: secondvcn
+    - set_fact:
+        cidr_second: "{{ secondvcn.vcns[0].cidr_block }}"
+
+    - name: first Delete route rules
+      oci_network_route_table:
+        compartment_id: "{{ compartment_first }}"
+        rt_id: "{{ item.id }}"
+        route_rules:
+          - destination: "{{ cidr_second }}"
+            network_entity_id: "{{ first_drg }}"
+        delete_route_rules: yes
+      loop: "{{ rts_first }}"
+
+    - name: second Delete route rules
+      oci_network_route_table:
+        compartment_id: "{{ compartment_second }}"
+        rt_id: "{{ item.id }}"
+        region: "{{ second_region }}"
+        route_rules:
+          - destination: "{{ cidr_first }}"
+            network_entity_id: "{{ second_drg }}"
+        delete_route_rules: yes
+      loop: "{{ rts_second }}"
+
+    - name: first Delete remote_peering_connection
+      oci_network_remote_peering_connection:
+        remote_peering_connection_id: "{{ first_rpc_id }}"
+        state: absent
+
+    - name: second Delete remote_peering_connection
+      oci_network_remote_peering_connection:
+        remote_peering_connection_id: "{{ second_rpc_id }}"
+        region: "{{ second_region }}"
+        state: absent
+
+    - name: Delete RPC variables
+      shell: sed -i '' '/remotepeeringconnection/d' route_table_inventory.ini
+      when: ansible_distribution is match('.*Mac.*')
+
+    - name: Delete RPC variables
+      shell: sed -i '/remotepeeringconnection/d' route_table_inventory.ini
+      when: ansible_distribution is match('.*Linux.*')

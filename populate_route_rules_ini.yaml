@@ -1,0 +1,61 @@
+- hosts: localhost
+  collections: oracle.oci
+  
+  tasks:
+  - name: first Get TFSTATE
+    oci_resource_manager_job_tf_state_facts:
+      job_id: "{{ first_stack }}"
+      dest: /tmp/first_tfstate.json
+  
+  - name: first Register TFSTATE
+    shell: cat /tmp/first_tfstate.json
+    register: first_tfstate
+  
+  - set_fact:
+      first_data: "{{ first_tfstate.stdout | from_json }}"
+
+  - name: second Get TFSTATE
+    oci_resource_manager_job_tf_state_facts:
+      job_id: "{{ second_stack }}"
+      dest: /tmp/second_tfstate.json
+  
+  - name: second Register TFSTATE
+    shell: cat /tmp/second_tfstate.json
+    register: second_tfstate
+  
+
+  - name: List regions
+    oci_identity_region_facts:
+    register: regions
+
+  - set_fact:
+      second_data: "{{ second_tfstate.stdout | from_json }}"
+
+  - set_fact:
+      first_drg: "{% for types in first_data.resources%}{% if types.module == 'module.network' and types.type == 'oci_core_drg' %}{{ types.instances[0].attributes.id }}{% endif %}{% endfor %}"
+      compartment_first: "{% for types in first_data.resources%}{% if types.module == 'module.network' and types.type == 'oci_core_drg' %}{{ types.instances[0].attributes.compartment_id }}{% endif %}{% endfor %}"
+      first_vcn_id: "{% for types in first_data.resources%}{% if types.module == 'module.network' and types.type == 'oci_core_vcn' %}{{ types.instances[0].attributes.id }}{% endif %}{% endfor %}"
+
+      second_drg: "{% for types in second_data.resources%}{% if types.module == 'module.network' and types.type == 'oci_core_drg' %}{{ types.instances[0].attributes.id }}{% endif %}{% endfor %}"
+      compartment_second: "{% for types in second_data.resources%}{% if types.module == 'module.network' and types.type == 'oci_core_drg' %}{{ types.instances[0].attributes.compartment_id }}{% endif %}{% endfor %}"
+      second_vcn_id: "{% for types in second_data.resources%}{% if types.module == 'module.network' and types.type == 'oci_core_vcn' %}{{ types.instances[0].attributes.id }}{% endif %}{% endfor %}"
+      second_region_key: "{% for types in second_data.resources%}{% if types.module == 'module.network' and types.type == 'oci_core_vcn' %}{{ types.instances[0].attributes.id.split('.')[3] | upper }}{% endif %}{% endfor %}"
+      regions: "{{ regions }}"
+  
+  - set_fact:
+      second_region: "{% for region in regions.regions %}{% if region.key == second_region_key %}{{ region.name }}{% endif %}{% endfor %}"
+  
+  - name: Write route_table_inventory.ini
+    shell: |
+      echo "[all:vars]" > route_table_inventory.ini
+      echo first_drg={{ first_drg }} >> route_table_inventory.ini
+      echo compartment_first={{ compartment_first }} >> route_table_inventory.ini
+      echo first_vcn_id={{ first_vcn_id }} >> route_table_inventory.ini
+      echo "\n" >> route_table_inventory.ini
+      echo second_drg={{ second_drg }} >> route_table_inventory.ini
+      echo compartment_second={{ compartment_second }} >> route_table_inventory.ini
+      echo second_vcn_id={{ second_vcn_id }} >> route_table_inventory.ini
+      echo second_region={{ second_region }} >> route_table_inventory.ini
+  
+  - name: Remove state files
+    shell: rm -rf /tmp/first_tfstate.json /tmp/second_tfstate.json
