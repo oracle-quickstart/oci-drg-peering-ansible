@@ -12,26 +12,28 @@ Compartment
 2 DRGs in different /same regions
 You will also need to install:
 
-oci_cli
-oci ansible modules -> ansible-galaxy collection install oracle.oci
+- oci_cli
+- oci ansible modules -> ansible-galaxy collection install oracle.oci
+
 In the root directory of the downloaded code, there are 4 files:
 
-route_rules_inventory.ini -> Inventory file containing all the prerequisites variables
-route_rules.yaml -> In charge of creating the drg connections and the necessary route rules
-route_rule_delete.yaml -> In charge of delete the drg connection and the necessary route rules
-populate_route_rules_ini.yaml -> OPTIONAL, you may use this only if you created your resources using OCI Resource Manager to populate the route_rules_inventory file
+- route_rules_inventory.ini -> Inventory file containing all the prerequisites variables
+- route_rules.yaml -> In charge of creating the drg connections and the necessary route rules
+- route_rule_delete.yaml -> In charge of delete the drg connection and the necessary route rules
+- populate_route_rules_ini.yaml -> OPTIONAL, you may use this only if you created your resources using OCI Resource Manager to populate the route_rules_inventory file
 
 ## Populating the Inventory file
 
 In order to prepare the inventory file (route_rules_inventory.ini) we have to first understand what arguments we need and what are they doing:
 
-first_drg - The id of the drg from the 1st region
-compartment_first - The id of the compartment from the 1st region
-first_vcn_id - The id of the vcn from the 1st regions
-second_drg - The id of the drg from the 2nd region
-compartment_second - The id of the compartment from the 2nd region
-second_vcn_id - The id of the vcn from the 2nd region
-second_region - The region name of the 2nd region (the first region should be available in oct-cli config)
+- first_drg - The id of the drg from the 1st region
+- compartment_first - The id of the compartment from the 1st region
+- first_vcn_id - The id of the vcn from the 1st regions
+- second_drg - The id of the drg from the 2nd region
+- compartment_second - The id of the compartment from the 2nd region
+- second_vcn_id - The id of the vcn from the 2nd region
+- second_region - The region name of the 2nd region (the first region should be available in oct-cli config)
+
 Now that we know what types of values we have to provide in the inventory file, let's populate it according to their description.
 
 In the end, the file should be similar to this:
