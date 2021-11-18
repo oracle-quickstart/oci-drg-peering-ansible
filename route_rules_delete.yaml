@@ -17,6 +17,14 @@
     - set_fact:
         cidr_first: "{{ firstvcn.vcns[0].cidr_block }}"
 
+    - name: first List Security Lists
+      oci_network_security_list_facts:
+        compartment_id: "{{ compartment_first }}"
+        vcn_id: "{{ first_vcn_id }}"
+      register: sl_first
+    - set_fact:
+        sls_first: "{{ sl_first.security_lists }}"
+
     - name: second List route_tables
       oci_network_route_table_facts:
         compartment_id: "{{ compartment_second }}"
@@ -34,6 +42,15 @@
     - set_fact:
         cidr_second: "{{ secondvcn.vcns[0].cidr_block }}"
 
+    - name: second List Security Lists
+      oci_network_security_list_facts:
+        compartment_id: "{{ compartment_second }}"
+        vcn_id: "{{ second_vcn_id }}"
+        region: "{{ second_region }}"
+      register: sl_second
+    - set_fact:
+        sls_second: "{{ sl_second.security_lists }}"
+
     - name: first Delete route rules
       oci_network_route_table:
         compartment_id: "{{ compartment_first }}"
@@ -43,6 +60,16 @@
             network_entity_id: "{{ first_drg }}"
         delete_route_rules: yes
       loop: "{{ rts_first }}"
+
+    - name: first Delete Security List rules
+      oci_network_security_list:
+        compartment_id: "{{ compartment_first }}"
+        security_list_id: "{{ item.id }}"
+        ingress_security_rules:
+          - protocol: "all"
+            source: "{{ cidr_second }}"
+        delete_security_rules: yes
+      loop: "{{ sls_first }}"
 
     - name: second Delete route rules
       oci_network_route_table:
@@ -54,6 +81,17 @@
             network_entity_id: "{{ second_drg }}"
         delete_route_rules: yes
       loop: "{{ rts_second }}"
+
+    - name: second delete Security List rules
+      oci_network_security_list:
+        compartment_id: "{{ compartment_first }}"
+        security_list_id: "{{ item.id }}"
+        region: "{{ second_region }}"
+        ingress_security_rules:
+          - protocol: "all"
+            source: "{{ cidr_first }}"
+        delete_security_rules: yes
+      loop: "{{ sls_second }}"
 
     - name: first Delete remote_peering_connection
       oci_network_remote_peering_connection:

@@ -36,9 +36,13 @@
     - set_fact:
         rts_first: "{{ route_tables_first.route_tables }}"
 
-    - name: "TEST"
-      debug:
-        msg: "{{ rts_first }}"
+    - name: first List Security Lists
+      oci_network_security_list_facts:
+        compartment_id: "{{ compartment_first }}"
+        vcn_id: "{{ first_vcn_id }}"
+      register: sl_first
+    - set_fact:
+        sls_first: "{{ sl_first.security_lists }}"
 
     - name: first Get a specific vcn
       oci_network_vcn_facts:
@@ -55,6 +59,15 @@
       register: route_tables_first
     - set_fact:
         rts_second: "{{ route_tables_first.route_tables }}"
+
+    - name: second List Security Lists
+      oci_network_security_list_facts:
+        compartment_id: "{{ compartment_second }}"
+        vcn_id: "{{ second_vcn_id }}"
+        region: "{{ second_region }}"
+      register: sl_second
+    - set_fact:
+        sls_second: "{{ sl_second.security_lists }}"
 
     - name: second Get a specific vcn
       oci_network_vcn_facts:
@@ -74,6 +87,16 @@
         purge_route_rules: no
       loop: "{{ rts_first }}"
 
+    - name: first Update Security List rules
+      oci_network_security_list:
+        compartment_id: "{{ compartment_first }}"
+        security_list_id: "{{ item.id }}"
+        ingress_security_rules:
+          - protocol: "all"
+            source: "{{ cidr_second }}"
+        purge_security_rules: no
+      loop: "{{ sls_first }}"
+
     - name: second Update route_table using name
       oci_network_route_table:
         compartment_id: "{{ compartment_second }}"
@@ -84,6 +107,17 @@
             network_entity_id: "{{ second_drg }}"
         purge_route_rules: no
       loop: "{{ rts_second }}"
+
+    - name: second Update Security List rules
+      oci_network_security_list:
+        compartment_id: "{{ compartment_first }}"
+        security_list_id: "{{ item.id }}"
+        region: "{{ second_region }}"
+        ingress_security_rules:
+          - protocol: "all"
+            source: "{{ cidr_first }}"
+        purge_security_rules: no
+      loop: "{{ sls_second }}"
 
     - name: read the inventory
       shell: cat route_table_inventory.ini
