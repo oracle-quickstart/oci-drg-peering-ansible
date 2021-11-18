@@ -17,14 +17,14 @@ You will also need to install:
 
 In the root directory of the downloaded code, there are 4 files:
 
-- route_rules_inventory.ini -> Inventory file containing all the prerequisites variables
-- route_rules.yaml -> In charge of creating the drg connections and the necessary route rules
-- route_rule_delete.yaml -> In charge of delete the drg connection and the necessary route rules
-- populate_route_rules_ini.yaml -> OPTIONAL, you may use this only if you created your resources using OCI Resource Manager to populate the route_rules_inventory file
+- peering.ini -> Inventory file containing all the prerequisites variables
+- peering_create.yaml -> In charge of creating the drg connections and the necessary route rules
+- peering_delete.yaml -> In charge of delete the drg connection and the necessary route rules
+- populate_peering.yaml -> OPTIONAL, you may use this only if you created your resources using OCI Resource Manager to populate the route_rules_inventory file
 
 ## Populating the Inventory file
 
-In order to prepare the inventory file (route_rules_inventory.ini) we have to first understand what arguments we need and what are they doing:
+In order to prepare the inventory file (peering.ini) we have to first understand what arguments we need and what are they doing:
 
 - first_drg - The id of the drg from the 1st region
 - compartment_first - The id of the compartment from the 1st region
@@ -53,12 +53,12 @@ second_region=us-phoenix-1
 
 In order to create the connection between the drgs and the necessary route rules, you will have to go to the root directory and run the following:
 
-`ansible-playbook -i route_rules_inventory.ini route_rules.yaml`
+`ansible-playbook -i peering.ini peering_create.yaml`
 
 In less than 10 minutes, the connection will be successfully established and the route rules will be created.
 
 If you want to delete the connection after it is created and to remove the route rules, you will simply have to run:
 
-`ansible-playbook -i route_rules_inventory.ini route_rules_delete.yaml`
+`ansible-playbook -i peering.ini peering_delete.yaml`
 
 Again, in less than 10 minutes, the connection and route rules will be removed.
