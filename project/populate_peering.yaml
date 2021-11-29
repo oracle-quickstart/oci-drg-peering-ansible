@@ -1,4 +1,5 @@
-- hosts: localhost
+- name: Populate peering
+  hosts: localhost
   collections: oracle.oci
   vars:
     first_stack: ""
